@@ -1,10 +1,12 @@
 import {StackScreenProps} from '@react-navigation/stack';
-import React, {FC} from 'react';
-import {Image, StyleSheet, View} from 'react-native';
+import React, {useState} from 'react';
+import {Alert, Image, StyleSheet, View} from 'react-native';
 import Button from '../components/Button';
+import Modal from '../components/Modal';
 import Screen from '../components/Screen';
 import Text from '../components/Text';
 import {NavigatorParamList} from '../navigators/NavigatorParamList';
+import axios from '../services/axios';
 import colors from '../theme/colors';
 import {utilFlex, utilSpacing, utilText} from '../theme/util';
 
@@ -21,10 +23,31 @@ const Row = ({label, value}: RowProps) => {
   );
 };
 
-const ProductDetailScreen: FC<
+const ProductDetailScreen: React.FC<
   StackScreenProps<NavigatorParamList, 'ProductDetail'>
-> = ({route: {params}}) => {
+> = ({navigation, route: {params}}) => {
   const {id, name, description, releaseDate, reviewDate, logo} = params;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleEdit = () => {
+    navigation.navigate('AddProduct', params);
+  };
+
+  const handleDelete = () => {
+    axios
+      .delete('/bp/products/' + params.id)
+      .then(response => {
+        Alert.alert('Product deleted', response?.data?.message);
+
+        navigation.navigate('Products');
+      })
+      .catch(error => {
+        Alert.alert(
+          'Error',
+          error.message || 'Lo sentimos, se ha logrado eliminar el producto',
+        );
+      });
+  };
 
   return (
     <Screen>
@@ -45,9 +68,21 @@ const ProductDetailScreen: FC<
           <Row label="Fecha revisión" value={reviewDate} />
         </View>
 
-        <Button text="Editar" variant="gray" style={utilSpacing.mb4} />
-        <Button text="Eliminar" />
+        <Button
+          text="Editar"
+          variant="gray"
+          style={utilSpacing.mb4}
+          onPress={handleEdit}
+        />
+        <Button text="Eliminar" onPress={() => setConfirmDelete(true)} />
       </View>
+
+      <Modal
+        title={`¿Esta seguro que desea eliminar el producto ${params.name}?`}
+        visible={confirmDelete}
+        onOk={handleDelete}
+        onClose={() => setConfirmDelete(false)}
+      />
     </Screen>
   );
 };

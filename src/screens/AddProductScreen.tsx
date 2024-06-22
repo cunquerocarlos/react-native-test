@@ -1,5 +1,5 @@
 import {StackScreenProps} from '@react-navigation/stack';
-import React, {FC} from 'react';
+import React, {useEffect} from 'react';
 import {FormProvider, useForm} from 'react-hook-form';
 import {Alert, ScrollView, StyleSheet, View} from 'react-native';
 import Button from '../components/Button';
@@ -13,10 +13,18 @@ import {utilSpacing} from '../theme/util';
 import {Product} from '../types/product';
 import {convertDate} from '../utils/date';
 
-const AddProductScreen: FC<
+const AddProductScreen: React.FC<
   StackScreenProps<NavigatorParamList, 'AddProduct'>
-> = ({navigation}) => {
+> = ({navigation, route: {params}}) => {
   const {...methods} = useForm<Product>({mode: 'all'});
+
+  useEffect(() => {
+    if (params?.id) {
+      console.log('set params');
+      methods.reset(params);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
 
   const validateDate = (value: string) => {
     if (!value) {
@@ -54,31 +62,88 @@ const AddProductScreen: FC<
   };
 
   const handleReset = () => {
-    methods.reset();
+    if (params?.id) {
+      methods.reset({
+        name: '',
+        description: '',
+        logo: '',
+        releaseDate: '',
+        reviewDate: '',
+        id: params.id,
+      });
+    } else {
+      methods.reset();
+    }
   };
 
-  const onSubmit = (data: Product) => {
-    console.log(data);
-
-    let productFormatted = {
-      ...data,
-      date_release: convertDate(data.releaseDate, 'YYYY-MM-DD'),
-      date_revision: convertDate(data.reviewDate, 'YYYY-MM-DD'),
-    };
+  const updateProduct = (data: any) => {
     axios
-      .post('/bp/products', productFormatted)
+      .put('/bp/products/' + data.id, data)
       .then(response => {
-        Alert.alert('Product added', response?.data?.message);
+        Alert.alert('Product updated', response?.data?.message);
         methods.reset();
-        navigation.goBack();
+        navigation.navigate('Products');
       })
       .catch(error => {
         console.log(JSON.stringify(error));
         Alert.alert(
           'Error',
-          error.message || 'Lo sentimos, se ha logrado agregar el producto',
+          error.message || 'Lo sentimos, se ha logrado actualizar el producto',
         );
       });
+  };
+
+  const insertProduct = async (data: any) => {
+    const exits = await exitsId(data.id);
+
+    if (!exits) {
+      axios
+        .post('/bp/products/', data)
+        .then(response => {
+          Alert.alert('Product added', response?.data?.message);
+          methods.reset();
+          navigation.goBack();
+        })
+        .catch(error => {
+          console.log(JSON.stringify(error));
+          Alert.alert(
+            'Error',
+            error.message || 'Lo sentimos, se ha logrado insertar el producto',
+          );
+        });
+    } else {
+      Alert.alert('Error', 'El ID ingresado ya existe');
+    }
+  };
+
+  const exitsId = async (id: string) => {
+    return await axios
+      .get('/bp/products/verification/' + id)
+      .then(response => {
+        console.log(response);
+        return response.data;
+      })
+      .catch(error => {
+        Alert.alert(
+          'Error',
+          error.message || 'Lo sentimos, se ha logrado validar el ID',
+        );
+        return false;
+      });
+  };
+
+  const onSubmit = async (data: Product) => {
+    let productFormatted = {
+      ...data,
+      date_release: convertDate(data.releaseDate, 'YYYY-MM-DD'),
+      date_revision: convertDate(data.reviewDate, 'YYYY-MM-DD'),
+    };
+
+    if (params?.id) {
+      updateProduct(productFormatted);
+    } else {
+      insertProduct(productFormatted);
+    }
   };
 
   const onError = (data: any) => {
@@ -106,6 +171,7 @@ const AddProductScreen: FC<
                 value: 10,
               },
             }}
+            editable={!params?.id}
           />
           <TextInput
             label="Name"

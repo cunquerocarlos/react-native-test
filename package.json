@@ -44,7 +44,13 @@
     "ts-jest": "^29.1.5",
     "typescript": "5.0.4"
   },
+  
   "engines": {
     "node": ">=18"
+  },
+  "eslintConfig": {
+    "rules": {
+      "react/react-in-jsx-scope": "off"
+    }
   }
 }

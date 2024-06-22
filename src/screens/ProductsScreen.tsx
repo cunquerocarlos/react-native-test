@@ -1,4 +1,4 @@
-import React, {FC, useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   Alert,
   ScrollView,
@@ -44,9 +44,9 @@ function ItemProduct({name, id, isLastItem, onPress}: PropsItemProduct) {
   );
 }
 
-const ProductsScreen: FC<StackScreenProps<NavigatorParamList, 'Products'>> = ({
-  navigation,
-}) => {
+const ProductsScreen: React.FC<
+  StackScreenProps<NavigatorParamList, 'Products'>
+> = ({navigation}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filteredProducts, setFilteredProducts] = useState(products);

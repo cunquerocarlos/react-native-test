@@ -5,5 +5,5 @@ interface ProductDetail extends Product {}
 export type NavigatorParamList = {
   Products: undefined;
   ProductDetail: ProductDetail;
-  AddProduct: undefined;
+  AddProduct: Product | undefined;
 };
